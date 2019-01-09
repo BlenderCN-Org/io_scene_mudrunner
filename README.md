@@ -11,7 +11,7 @@ Documentation for the original exporter is [here](https://en.blender.org/index.p
 
 ## To Install
 
-Download the [io_scene_mudrunner.zip file](io_scene_mudrunner.zip).  Your browser might complain about potential malware simply because it's a ZIP file from GitHub.  If you want to check for yourself, you can extract the ZIP contents and diff them against the original DirectX exporter script.  The original script should be in a directory something like `C:\Program Files\Blender Foundation\Blender\2.78\scripts\addons\io_scene_x`.
+Download the GitHub repository as a [ZIP file](https://github.com/fred-rum/io_scene_mudrunner/archive/master.zip).
 
 To install the addon, run Blender and select `File -> User Preferences... (Ctrl-Alt-U)`.  Click on the "Add-ons" tab, then click "Install from File..." at the bottom.  Navigate to your downloaded `io_scene_mudrunner.zip` file and install it.  The preferences window shows the new `Import-Export: DirectX X Format for Spintires MudRunner` addon.  Put a checkmark in the box next to it to enable it, and then click "Save User Settings" at the bottom.
 
