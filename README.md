@@ -13,6 +13,6 @@ Documentation for the original exporter is [here](https://en.blender.org/index.p
 
 Download the GitHub repository as a [ZIP file](https://github.com/fred-rum/io_scene_mudrunner/archive/master.zip).
 
-To install the addon, run Blender and select `File -> User Preferences... (Ctrl-Alt-U)`.  Click on the "Add-ons" tab, then click "Install from File..." at the bottom.  Navigate to your downloaded `io_scene_mudrunner.zip` file and install it.  The preferences window shows the new `Import-Export: DirectX X Format for Spintires MudRunner` addon.  Put a checkmark in the box next to it to enable it, and then click "Save User Settings" at the bottom.
+To install the addon, run Blender and select `File -> User Preferences... (Ctrl-Alt-U)`.  Click on the "Add-ons" tab, then click "Install from File..." at the bottom.  Navigate to your downloaded `io_scene_mudrunner-master.zip` file and install it.  The preferences window shows the new `Import-Export: DirectX X Format for Spintires MudRunner` addon.  Put a checkmark in the box next to it to enable it, and then click "Save User Settings" at the bottom.
 
 You can now export with `File -> Export -> MudRunner (.x)`.  The export dialog looks much like the old DirectX exporter, but with a new checkbox for `Flatten Transforms to Meshes`.  Check this box to enjoy hassle-free exporting.
