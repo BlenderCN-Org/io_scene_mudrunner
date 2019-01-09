@@ -7,6 +7,8 @@ Big caveat: this exporter has only been tested with static models and grasses.  
 
 This Blender addon is known to work with Blender 2.78.  It is based on the DirectX exporter that has been packaged with Blender since at least 2.69, so it should work with those versions as well.  However, there's a good chance that it won't work with Blender 2.80.
 
+Documentation for the original exporter is [here](https://en.blender.org/index.php/Extensions:2.6/Py/Scripts/Import-Export/DirectX_Exporter).
+
 ## To Install
 
 Download the [io_scene_mudrunner.zip file](io_scene_mudrunner.zip).  Your browser might complain about potential malware simply because it's a ZIP file from GitHub.  If you want to check for yourself, you can extract the ZIP contents and diff them against the original DirectX exporter script.  The original script should be in a directory something like `C:\Program Files\Blender Foundation\Blender\2.78\scripts\addons\io_scene_x`.
