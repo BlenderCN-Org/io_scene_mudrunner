@@ -19,14 +19,15 @@
 # <pep8 compliant>
 
 bl_info = {
-    "name": "DirectX X Format for Spintires MudRunner",
+    "name": "DirectX Exporter for Spintires MudRunner",
     "author": "Chris Nelson from Chris Foster",
-    "version": (0, 0, 4),
+    "version": (0, 0, 6),
     "blender": (2, 69, 0),
     "location": "File > Export > MudRunner (.x)",
     "description": "Export mesh vertices, UV's, materials, textures, "
                    "vertex colors, armatures, empties, and actions.",
     "wiki_url": "https://github.com/fred-rum/io_scene_mudrunner",
+    "support": "TESTING",
     "category": "Import-Export"}
 
 

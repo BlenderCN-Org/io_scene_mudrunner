@@ -113,18 +113,20 @@ class DirectXExporter:
         self.__WriteHeader()
         self.Log("Done")
 
-        self.Log("Opening Root frame...")
-        self.__OpenRootFrame(self.Config.FlattenToMesh)
-        self.Log("Done")
+        if not self.Config.FlattenToMesh:
+            self.Log("Opening Root frame...")
+            self.__OpenRootFrame(self.Config.FlattenToMesh)
+            self.Log("Done")
 
         self.Log("Writing objects...")
         for Object in self.RootExportList:
             Object.Write(self.Config.FlattenToMesh, self.SystemMatrix)
         self.Log("Done writing objects")
 
-        self.Log("Closing Root frame...")
-        self.__CloseRootFrame()
-        self.Log("Done")
+        if not self.Config.FlattenToMesh:
+            self.Log("Closing Root frame...")
+            self.__CloseRootFrame()
+            self.Log("Done")
 
         if self.AnimationWriter is not None:
             self.Log("Writing animation set(s)...")
