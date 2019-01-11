@@ -113,10 +113,6 @@ class DirectXExporter:
         self.__WriteHeader()
         self.Log("Done")
 
-        FlattenType = self.Config.FlattenType
-        if FlattenType == 'none':
-            FlattenType = '' # evaluates to false
-
         if not self.Config.FlattenRoot:
             self.Log("Opening Root frame...")
             self.__OpenRootFrame()
@@ -127,7 +123,7 @@ class DirectXExporter:
 
         self.Log("Writing objects...")
         for Object in self.RootExportList:
-            Object.Write(FlattenType, RefMatrix)
+            Object.Write(RefMatrix)
         self.Log("Done writing objects")
 
         if not self.Config.FlattenRoot:
@@ -308,23 +304,24 @@ class ExportObject: # Base class, do not use
 
     # "Public" Interface
 
-    def Write(self, FlattenType, RefMatrix):
+    def Write(self, RefMatrix):
         self.Exporter.Log("Opening frame for {}".format(self))
-        ChildMatrix = self._OpenFrame(FlattenType, RefMatrix)
+        ChildMatrix = self._OpenFrame(RefMatrix)
 
         self.Exporter.Log("Writing children of {}".format(self))
-        self._WriteChildren(FlattenType, ChildMatrix)
+        self._WriteChildren(ChildMatrix)
 
         self._CloseFrame()
         self.Exporter.Log("Closed frame of {}".format(self))
 
     # "Protected" Interface
 
-    def _OpenFrame(self, FlattenType, RefMatrix):
+    def _OpenFrame(self, RefMatrix):
         OrigMatrix = self.BlenderObject.matrix_local
         self.Exporter.Log("Ref:\n{}".format(RefMatrix))
         self.Exporter.Log("Orig:\n{}".format(OrigMatrix))
 
+        FlattenType = self.Exporter.Config.FlattenType
         if FlattenType == 'all':
             # The object's frame is emitted with the identity matrix,
             # and all transforms are passed to the children.
@@ -391,9 +388,9 @@ class ExportObject: # Base class, do not use
         self.Exporter.File.Unindent()
         self.Exporter.File.Write("}} // End of {}\n".format(self.SafeName))
 
-    def _WriteChildren(self, FlattenType, RefMatrix):
+    def _WriteChildren(self, RefMatrix):
         for Child in Util.SortByNameField(self.Children):
-            Child.Write(FlattenType, RefMatrix)
+            Child.Write(RefMatrix)
 
 # Simple decorator implementation for ExportObject.  Used by empty objects
 class EmptyExportObject(ExportObject):
@@ -413,9 +410,9 @@ class MeshExportObject(ExportObject):
 
     # "Public" Interface
 
-    def Write(self, FlattenType, RefMatrix):
+    def Write(self, RefMatrix):
         self.Exporter.Log("Opening frame for {}".format(self))
-        ChildMatrix = self._OpenFrame(FlattenType, RefMatrix)
+        ChildMatrix = self._OpenFrame(RefMatrix)
 
         if self.Config.ExportMeshes:
             self.Exporter.Log("Generating mesh for export...")
@@ -455,7 +452,7 @@ class MeshExportObject(ExportObject):
             bpy.data.meshes.remove(Mesh)
 
         self.Exporter.Log("Writing children of {}".format(self))
-        self._WriteChildren(FlattenType, ChildMatrix)
+        self._WriteChildren(ChildMatrix)
 
         self._CloseFrame()
         self.Exporter.Log("Closed frame of {}".format(self))
@@ -1054,9 +1051,9 @@ class ArmatureExportObject(ExportObject):
 
     # "Public" Interface
 
-    def Write(self, FlattenType, RefMatrix):
+    def Write(self, RefMatrix):
         self.Exporter.Log("Opening frame for {}".format(self))
-        ChildMatrix = self._OpenFrame(FlattenType, RefMatrix)
+        ChildMatrix = self._OpenFrame(RefMatrix)
 
         if self.Config.ExportArmatureBones:
             Armature = self.BlenderObject.data
@@ -1066,7 +1063,7 @@ class ArmatureExportObject(ExportObject):
             self.Exporter.Log("Done")
 
         self.Exporter.Log("Writing children of {}".format(self))
-        self._WriteChildren(FlattenType, ChildMatrix)
+        self._WriteChildren(ChildMatrix)
 
         self._CloseFrame()
         self.Exporter.Log("Closed frame of {}".format(self))
