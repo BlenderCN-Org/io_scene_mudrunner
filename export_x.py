@@ -39,11 +39,14 @@ class DirectXExporter:
         self.SystemMatrix = Matrix()
         self.SystemMatrix.resize_4x4()
 
-        if self.Config.CoordinateSystem == 'LEFT_HANDED':
-            self.SystemMatrix *= Matrix.Scale(-1, 4, Vector((0, 0, 1)))
+        # If FlattenRoot is true and FlattenType is none,
+        # we just throw away the coordinate system.
+        if not (self.Config.FlattenRoot and self.Config.FlattenType == 'none'):
+            if self.Config.CoordinateSystem == 'LEFT_HANDED':
+                self.SystemMatrix *= Matrix.Scale(-1, 4, Vector((0, 0, 1)))
 
-        if self.Config.UpAxis == 'Y':
-            self.SystemMatrix *= Matrix.Rotation(radians(-90), 4, 'X')
+            if self.Config.UpAxis == 'Y':
+                self.SystemMatrix *= Matrix.Rotation(radians(-90), 4, 'X')
 
         self.Log("Done")
 
@@ -119,6 +122,8 @@ class DirectXExporter:
             self.Log("Done")
             RefMatrix = Matrix()
         else:
+            # Otherwise if FlattenRoot is true,
+            # propagate the coordinate system to the top-level objects.
             RefMatrix = self.SystemMatrix
 
         self.Log("Writing objects...")
@@ -321,7 +326,7 @@ class ExportObject: # Base class, do not use
         self.Exporter.Log("Ref:\n{}".format(RefMatrix))
         self.Exporter.Log("Orig:\n{}".format(OrigMatrix))
 
-        FlattenType = self.Exporter.Config.FlattenType
+        FlattenType = self.Config.FlattenType
         if FlattenType == 'all':
             # The object's frame is emitted with the identity matrix,
             # and all transforms are passed to the children.
@@ -335,7 +340,7 @@ class ExportObject: # Base class, do not use
             # It may be preferable to flip only one axis.
             # We do this by flipping the other two axes before applying
             # the negative scale, then flip them back for the children.
-            InvertAxis = self.Exporter.Config.InvertAxis
+            InvertAxis = self.Config.InvertAxis
             if RefMatrix.is_negative and InvertAxis != 'XYZ':
                 OrigMatrix = (OrigMatrix *
                               Matrix.Rotation(radians(180), 4, InvertAxis))
@@ -541,7 +546,9 @@ class MeshExportObject(ExportObject):
 
             self.Exporter.File.Write("{};".format(len(PolygonVertexIndices)))
 
-            if self.Config.CoordinateSystem == 'LEFT_HANDED':
+            if (not (self.Config.FlattenRoot and
+                     self.Config.FlattenType == 'none') and
+                self.Config.CoordinateSystem == 'LEFT_HANDED'):
                 PolygonVertexIndices = PolygonVertexIndices[::-1]
 
             for VertexCountIndex, VertexIndex in \

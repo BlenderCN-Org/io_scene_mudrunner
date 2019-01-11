@@ -21,7 +21,7 @@
 bl_info = {
     "name": "DirectX Exporter for Spintires MudRunner",
     "author": "Chris Nelson from Chris Foster",
-    "version": (0, 0, 10),
+    "version": (0, 0, 11),
     "blender": (2, 69, 0),
     "location": "File > Export > MudRunner (.x)",
     "description": "Export mesh vertices, UV's, materials, textures, "
@@ -71,6 +71,8 @@ class ExportDirectX(bpy.types.Operator):
         description="Export mesh objects",
         default=True)
 
+    # Blender mysteriously fails if the identifier for 'Scale' uses the same
+    # mixed case.  To avoid this, all of these identifiers are lower-case.
     FlattenType = EnumProperty(
         name="Propagate",
         description="Propagate selected transformations from the object hierarchy into the mesh data (and probably break armature bones)",
