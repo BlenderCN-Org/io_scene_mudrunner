@@ -21,7 +21,7 @@
 bl_info = {
     "name": "DirectX Exporter for Spintires MudRunner",
     "author": "Chris Nelson from Chris Foster",
-    "version": (0, 0, 7),
+    "version": (0, 0, 8),
     "blender": (2, 69, 0),
     "location": "File > Export > MudRunner (.x)",
     "description": "Export mesh vertices, UV's, materials, textures, "
@@ -83,7 +83,7 @@ class ExportDirectX(bpy.types.Operator):
     FlattenRoot = BoolProperty(
         name="    Flatten Coordinate Root",
         description="The coordinate matrix is flattened into the top-level "
-            "objects. Do not use with Propagate Scale if top objects are rotated.",
+            "objects to avoid adding extra hierarchy.",
         default=True)
 
     ExportNormals = BoolProperty(
