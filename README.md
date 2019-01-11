@@ -15,7 +15,7 @@ Download the GitHub repository as a [ZIP file](https://github.com/fred-rum/io_sc
 
 To install the addon, run Blender and select `File -> User Preferences... (Ctrl-Alt-U)`.  Click on the "Add-ons" tab, then click "Install from File..." at the bottom.  Navigate to your downloaded `io_scene_mudrunner-master.zip` file and install it.
 
-Once installed, the new `Import-Export: DirectX X Format for Spintires MudRunner` addon can be found in the `Supported Level: Testing` tab on the left.  Put a checkmark in the box next to the addon to enable it, and then click "Save User Settings" at the bottom to keep it enabled for all future Blender sessions.
+Once installed, the new `Import-Export: DirectX Format for Spintires MudRunner` addon can be found in the `Supported Level: Testing` tab on the left.  Put a checkmark in the box next to the addon to enable it, and then click "Save User Settings" at the bottom to keep it enabled for all future Blender sessions.
 
 # To Use
 
