@@ -21,7 +21,7 @@
 bl_info = {
     "name": "DirectX Exporter for Spintires MudRunner",
     "author": "Chris Nelson from Chris Foster",
-    "version": (0, 0, 8),
+    "version": (0, 0, 9),
     "blender": (2, 69, 0),
     "location": "File > Export > MudRunner (.x)",
     "description": "Export mesh vertices, UV's, materials, textures, "
@@ -79,6 +79,16 @@ class ExportDirectX(bpy.types.Operator):
                ('all', "All", "Propagate all transforms to the mesh level"),
                ),
         default='scale')
+
+    InvertAxis = EnumProperty(
+        name="Invert",
+        description="Choose which local axis is inverted when propagating scales in a left-handed coordinate system",
+        items=(('X', "X", "Invert only the X axis"),
+               ('Y', "Y", "Invert only the Y axis"),
+               ('Z', "Z", "Invert only the Z axis"),
+               ('XYZ', "XYZ", "Invert all three axes"),
+               ),
+        default='Y')
 
     FlattenRoot = BoolProperty(
         name="    Flatten Coordinate Root",

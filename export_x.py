@@ -321,23 +321,33 @@ class ExportObject: # Base class, do not use
     # "Protected" Interface
 
     def _OpenFrame(self, FlattenType, RefMatrix):
+        OrigMatrix = self.BlenderObject.matrix_local
         self.Exporter.Log("Ref:\n{}".format(RefMatrix))
-        self.Exporter.Log("Orig:\n{}".format(self.BlenderObject.matrix_local))
+        self.Exporter.Log("Orig:\n{}".format(OrigMatrix))
 
         if FlattenType == 'all':
             # The object's frame is emitted with the identity matrix,
             # and all transforms are passed to the children.
             LocalMatrix = Matrix()
-            ChildMatrix = RefMatrix * self.BlenderObject.matrix_local
+            ChildMatrix = RefMatrix * OrigMatrix
         elif FlattenType == 'scale':
             # The object's frame is emitted with identity scale,
             # and the scale factor is passed to the children.
+
+            # When a negative scale is applied, it flips all axes.
+            # It may be preferable to flip only one axis.
+            # We do this by flipping the other two axes before applying
+            # the negative scale, then flip them back for the children.
+            InvertAxis = self.Exporter.Config.InvertAxis
+            if RefMatrix.is_negative and InvertAxis != 'XYZ':
+                OrigMatrix = (OrigMatrix *
+                              Matrix.Rotation(radians(180), 4, InvertAxis))
 
             # Break down the matrix and rebuild it with the (median) scale
             # separated out.  This isn't as clever as it could be when
             # the scales aren't the same on each axis, but there's no way
             # to handle that case perfectly anyway.
-            TotalMatrix = RefMatrix * self.BlenderObject.matrix_local
+            TotalMatrix = RefMatrix * OrigMatrix
 
             LocationVec, RotationQuat, ScaleVec = TotalMatrix.decompose()
 
@@ -354,10 +364,13 @@ class ExportObject: # Base class, do not use
                 Scale = -Scale
 
             ChildMatrix = Matrix.Scale(Scale, 4)
+            if RefMatrix.is_negative and InvertAxis != 'XYZ':
+                ChildMatrix = (ChildMatrix *
+                               Matrix.Rotation(radians(180), 4, InvertAxis))
         else:
             # The object's frame is emitted with its unmodified matrix,
             # and no transforms are passed to the children,
-            LocalMatrix = self.BlenderObject.matrix_local
+            LocalMatrix = OrigMatrix
             ChildMatrix = Matrix()
 
         self.Exporter.Log("Local:\n{}".format(LocalMatrix))
