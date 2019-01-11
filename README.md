@@ -29,7 +29,11 @@ MudRunner can handle different amounts of information in the object hierarchy de
 
 For a grass, set `Propagate: All`.  All transformations are pushed into the meshes, leaving the object hierarchy as simple place holders.
 
-For a dynamic model, set `Propagate: Scale` to keep positions and rotations in the hierarchy, but push scales into the meshes.  This makes constraints easier to set up.  Caveat: With the left-handed coordinate system, all axes are inverted from their Blender orientation.  The model displays exactly correctly, but constraints need to be set with respect to these inverted axes.  Second caveat: if the scale is not the same in all axes, it can result in shear.  MudRunner can't handle it, and neither can this exporter.
+For a dynamic model, set `Propagate: Scale` to keep positions and rotations in the hierarchy, but push scales into the meshes.  This makes constraints easier to set up.
+
+Caveat: With the left-handed coordinate system, at least one axis must be inverted from its Blender orientation.  The model displays exactly correctly, but constraints need to be set with respect to the inverted axes.  You can choose which axis is inverted with the `Invert` option.  This option only has an effect with `Propagate: Scale`.
+
+Second caveat: if the scale is not the same in all axes, it can result in shear.  MudRunner can't handle it, and neither can `Propagate: Scale`.
 
 For a static model, set `Propagate: Scale` or `Propagate: All`.  With no constraints to set, either can be used.
 
