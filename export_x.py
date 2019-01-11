@@ -344,29 +344,16 @@ class ExportObject: # Base class, do not use
             self.Exporter.Log("Total:\n{}".format(TotalMatrix))
             self.Exporter.Log("Scale:\n{}".format(ScaleVec))
 
-            if (ScaleVec[0] < 0 and
-                ScaleVec[0] == ScaleVec[1] and ScaleVec[0] == ScaleVec[2]):
-                # It's a uniform negative scaling, which might be our Z-axis
-                # flip combined with some scale in the top-level object.
-                # If we decompose and recompose it, MudRunner won't understand
-                # it, so instead we rescale it directly.
-                Scale = -ScaleVec[0]
-                ScaleMatrix = Matrix.Scale(Scale, 4)
-                UndoScaleMatrix = Matrix.Scale(1.0 / Scale, 4)
-                LocalMatrix = TotalMatrix * UndoScaleMatrix
-                ChildMatrix = ScaleMatrix
-            else:
-                Scale = TotalMatrix.median_scale
+            Scale = TotalMatrix.median_scale
 
-                LocationMatrix = Matrix.Translation(LocationVec)
-                RotationMatrix = RotationQuat.to_matrix().to_4x4()
-                LocalMatrix = LocationMatrix * RotationMatrix
+            LocationMatrix = Matrix.Translation(LocationVec)
+            RotationMatrix = RotationQuat.to_matrix().to_4x4()
+            LocalMatrix = LocationMatrix * RotationMatrix
 
-                #if TotalMatrix.is_negative:
-                #    LocalMatrix *= Matrix.Scale(-1.0, 4)
-                #    Scale = -Scale
+            if TotalMatrix.is_negative:
+                Scale = -Scale
 
-                ChildMatrix = Matrix.Scale(Scale, 4)
+            ChildMatrix = Matrix.Scale(Scale, 4)
         else:
             # The object's frame is emitted with its unmodified matrix,
             # and no transforms are passed to the children,
