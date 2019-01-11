@@ -20,6 +20,9 @@ $RECYCLE.BIN/
 # Emacs backups
 *~
 
+# Compiled Python files
+*.pyc
+
 # =========================
 # Operating System Files
 # =========================

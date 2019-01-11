@@ -113,17 +113,24 @@ class DirectXExporter:
         self.__WriteHeader()
         self.Log("Done")
 
-        if not self.Config.FlattenToMesh:
+        FlattenType = self.Config.FlattenType
+        if FlattenType == 'none':
+            FlattenType = '' # evaluates to false
+
+        if not self.Config.FlattenRoot:
             self.Log("Opening Root frame...")
-            self.__OpenRootFrame(self.Config.FlattenToMesh)
+            self.__OpenRootFrame()
             self.Log("Done")
+            RefMatrix = Matrix()
+        else:
+            RefMatrix = self.SystemMatrix
 
         self.Log("Writing objects...")
         for Object in self.RootExportList:
-            Object.Write(self.Config.FlattenToMesh, self.SystemMatrix)
+            Object.Write(FlattenType, RefMatrix)
         self.Log("Done writing objects")
 
-        if not self.Config.FlattenToMesh:
+        if not self.Config.FlattenRoot:
             self.Log("Closing Root frame...")
             self.__CloseRootFrame()
             self.Log("Done")
@@ -170,16 +177,16 @@ template SkinWeights {\n\
 }\n\n")
 
     # Start the Root frame and write its transform matrix
-    def __OpenRootFrame(self, FlattenToMesh):
+    def __OpenRootFrame(self):
         self.File.Write("Frame Root {\n")
         self.File.Indent()
 
         self.File.Write("FrameTransformMatrix {\n")
         self.File.Indent()
 
-        # Write the matrix that will convert Blender's coordinate space into
+        # Write the matrix that converts Blender's coordinate space into
         # DirectX's.
-        Util.WriteMatrix(self.File, FlattenToMesh, self.SystemMatrix)
+        Util.WriteMatrix(self.File, self.SystemMatrix)
 
         self.File.Unindent()
         self.File.Write("}\n")
@@ -301,37 +308,92 @@ class ExportObject: # Base class, do not use
 
     # "Public" Interface
 
-    def Write(self, FlattenToMesh, RefMatrix):
+    def Write(self, FlattenType, RefMatrix):
         self.Exporter.Log("Opening frame for {}".format(self))
-        self._OpenFrame(FlattenToMesh)
+        ChildMatrix = self._OpenFrame(FlattenType, RefMatrix)
 
         self.Exporter.Log("Writing children of {}".format(self))
-        self._WriteChildren(FlattenToMesh, RefMatrix)
+        self._WriteChildren(FlattenType, ChildMatrix)
 
         self._CloseFrame()
         self.Exporter.Log("Closed frame of {}".format(self))
 
     # "Protected" Interface
 
-    def _OpenFrame(self, FlattenToMesh):
+    def _OpenFrame(self, FlattenType, RefMatrix):
+        self.Exporter.Log("Ref:\n{}".format(RefMatrix))
+        self.Exporter.Log("Orig:\n{}".format(self.BlenderObject.matrix_local))
+
+        if FlattenType == 'all':
+            # The object's frame is emitted with the identity matrix,
+            # and all transforms are passed to the children.
+            LocalMatrix = Matrix()
+            ChildMatrix = RefMatrix * self.BlenderObject.matrix_local
+        elif FlattenType == 'scale':
+            # The object's frame is emitted with identity scale,
+            # and the scale factor is passed to the children.
+
+            # Break down the matrix and rebuild it with the (median) scale
+            # separated out.  This isn't as clever as it could be when
+            # the scales aren't the same on each axis, but there's no way
+            # to handle that case perfectly anyway.
+            TotalMatrix = RefMatrix * self.BlenderObject.matrix_local
+
+            LocationVec, RotationQuat, ScaleVec = TotalMatrix.decompose()
+
+            self.Exporter.Log("Total:\n{}".format(TotalMatrix))
+            self.Exporter.Log("Scale:\n{}".format(ScaleVec))
+
+            if (ScaleVec[0] < 0 and
+                ScaleVec[0] == ScaleVec[1] and ScaleVec[0] == ScaleVec[2]):
+                # It's a uniform negative scaling, which might be our Z-axis
+                # flip combined with some scale in the top-level object.
+                # If we decompose and recompose it, MudRunner won't understand
+                # it, so instead we rescale it directly.
+                Scale = -ScaleVec[0]
+                ScaleMatrix = Matrix.Scale(Scale, 4)
+                UndoScaleMatrix = Matrix.Scale(1.0 / Scale, 4)
+                LocalMatrix = TotalMatrix * UndoScaleMatrix
+                ChildMatrix = ScaleMatrix
+            else:
+                Scale = TotalMatrix.median_scale
+
+                LocationMatrix = Matrix.Translation(LocationVec)
+                RotationMatrix = RotationQuat.to_matrix().to_4x4()
+                LocalMatrix = LocationMatrix * RotationMatrix
+
+                #if TotalMatrix.is_negative:
+                #    LocalMatrix *= Matrix.Scale(-1.0, 4)
+                #    Scale = -Scale
+
+                ChildMatrix = Matrix.Scale(Scale, 4)
+        else:
+            # The object's frame is emitted with its unmodified matrix,
+            # and no transforms are passed to the children,
+            LocalMatrix = self.BlenderObject.matrix_local
+            ChildMatrix = Matrix()
+
+        self.Exporter.Log("Local:\n{}".format(LocalMatrix))
+        self.Exporter.Log("Child:\n{}".format(ChildMatrix))
+
         self.Exporter.File.Write("Frame {} {{\n".format(self.SafeName))
         self.Exporter.File.Indent()
 
         self.Exporter.File.Write("FrameTransformMatrix {\n")
         self.Exporter.File.Indent()
-        Util.WriteMatrix(self.Exporter.File,
-                         FlattenToMesh, self.BlenderObject.matrix_local)
+        Util.WriteMatrix(self.Exporter.File, LocalMatrix)
         self.Exporter.File.Unindent()
         self.Exporter.File.Write("}\n")
+
+        return ChildMatrix
 
     def _CloseFrame(self):
         self.Exporter.File.Unindent()
         self.Exporter.File.Write("}} // End of {}\n".format(self.SafeName))
 
-    def _WriteChildren(self, FlattenToMesh, RefMatrix):
+    def _WriteChildren(self, FlattenType, RefMatrix):
         for Child in Util.SortByNameField(self.Children):
-            Child.Write(FlattenToMesh,
-                        RefMatrix * self.BlenderObject.matrix_local)
+            Child.Write(FlattenType, RefMatrix)
 
 # Simple decorator implementation for ExportObject.  Used by empty objects
 class EmptyExportObject(ExportObject):
@@ -351,9 +413,9 @@ class MeshExportObject(ExportObject):
 
     # "Public" Interface
 
-    def Write(self, FlattenToMesh, RefMatrix):
+    def Write(self, FlattenType, RefMatrix):
         self.Exporter.Log("Opening frame for {}".format(self))
-        self._OpenFrame(FlattenToMesh)
+        ChildMatrix = self._OpenFrame(FlattenType, RefMatrix)
 
         if self.Config.ExportMeshes:
             self.Exporter.Log("Generating mesh for export...")
@@ -387,14 +449,13 @@ class MeshExportObject(ExportObject):
                     False, 'PREVIEW')
             self.Exporter.Log("Done")
 
-            self.__WriteMesh(Mesh, FlattenToMesh,
-                             RefMatrix * self.BlenderObject.matrix_local)
+            self.__WriteMesh(Mesh, ChildMatrix)
 
             # Cleanup
             bpy.data.meshes.remove(Mesh)
 
         self.Exporter.Log("Writing children of {}".format(self))
-        self._WriteChildren(FlattenToMesh, RefMatrix)
+        self._WriteChildren(FlattenType, ChildMatrix)
 
         self._CloseFrame()
         self.Exporter.Log("Closed frame of {}".format(self))
@@ -448,7 +509,7 @@ class MeshExportObject(ExportObject):
 
     # "Private" Methods
 
-    def __WriteMesh(self, Mesh, FlattenToMesh, RefMatrix):
+    def __WriteMesh(self, Mesh, RefMatrix):
         self.Exporter.Log("Writing mesh vertices...")
         self.Exporter.File.Write("Mesh {{ // {} mesh\n".format(self.SafeName))
         self.Exporter.File.Indent()
@@ -466,10 +527,7 @@ class MeshExportObject(ExportObject):
         VertexCount = len(MeshEnumerator.vertices)
         self.Exporter.File.Write("{};\n".format(VertexCount))
         for Index, Vertex in enumerate(MeshEnumerator.vertices):
-            if FlattenToMesh:
-                Position = RefMatrix * Vertex.co
-            else:
-                Position = Vertex.co
+            Position = RefMatrix * Vertex.co
             self.Exporter.File.Write("{:9f};{:9f};{:9f};".format(
                         Position[0], Position[1], Position[2]))
 
@@ -509,7 +567,7 @@ class MeshExportObject(ExportObject):
 
         if self.Config.ExportNormals:
             self.Exporter.Log("Writing mesh normals...")
-            self.__WriteMeshNormals(Mesh, FlattenToMesh, RefMatrix)
+            self.__WriteMeshNormals(Mesh, RefMatrix)
             self.Exporter.Log("Done")
 
         if self.Config.ExportUVCoordinates:
@@ -540,7 +598,7 @@ class MeshExportObject(ExportObject):
         self.Exporter.File.Unindent()
         self.Exporter.File.Write("}} // End of {} mesh\n".format(self.SafeName))
 
-    def __WriteMeshNormals(self, Mesh, FlattenToMesh, RefMatrix,
+    def __WriteMeshNormals(self, Mesh, RefMatrix,
                            MeshEnumerator=None):
         # Since mesh normals only need their face counts and vertices per face
         # to match up with the other mesh data, we can optimize export with
@@ -571,15 +629,14 @@ class MeshExportObject(ExportObject):
         if MeshEnumerator is None:
             MeshEnumerator = _NormalsMeshEnumerator(Mesh)
 
-        if FlattenToMesh:
-            # I'm completely lost regarding how to efficiently calculate
-            # the normal in global space, so here's my intuitive solution:
-            # Treat the normal as if it is a line segment.  Transform each
-            # end by the RefMatrix to put the line segment in global space.
-            # Take the difference in coordinate values between the ends of
-            # the line segment, and normalize.
-            NormalBase = RefMatrix * Vector((0.0, 0.0, 0.0))
-            self.Exporter.Log("NB {}".format(NormalBase))
+        # I'm completely lost regarding how to efficiently calculate
+        # the normal in global space, so here's my intuitive solution:
+        # Treat the normal as if it is a line segment.  Transform each
+        # end by the RefMatrix to put the line segment in global space.
+        # Take the difference in coordinate values between the ends of
+        # the line segment, and normalize.
+        NormalBase = RefMatrix * Vector((0.0, 0.0, 0.0))
+        #self.Exporter.Log("NB {}".format(NormalBase))
 
         self.Exporter.File.Write("MeshNormals {{ // {} normals\n".format(
             self.SafeName))
@@ -591,12 +648,11 @@ class MeshExportObject(ExportObject):
         # Write mesh normals.
         for Index, Vertex in enumerate(MeshEnumerator.vertices):
             Normal = Vertex.normal.copy()
-            self.Exporter.Log("NO {}".format(Normal))
-            if FlattenToMesh:
-                Normal = RefMatrix * Normal - NormalBase
-                self.Exporter.Log("ND {}".format(Normal))
-                Normal.normalize()
-                self.Exporter.Log("N {}".format(Normal))
+            #self.Exporter.Log("NO {}".format(Normal))
+            Normal = RefMatrix * Normal - NormalBase
+            #self.Exporter.Log("ND {}".format(Normal))
+            Normal.normalize()
+            #self.Exporter.Log("N {}".format(Normal))
 
             if self.Config.FlipNormals:
                 Normal = -1.0 * Vertex.normal
@@ -998,9 +1054,9 @@ class ArmatureExportObject(ExportObject):
 
     # "Public" Interface
 
-    def Write(self, FlattenToMesh, RefMatrix):
+    def Write(self, FlattenType, RefMatrix):
         self.Exporter.Log("Opening frame for {}".format(self))
-        self._OpenFrame(FlattenToMesh)
+        ChildMatrix = self._OpenFrame(FlattenType, RefMatrix)
 
         if self.Config.ExportArmatureBones:
             Armature = self.BlenderObject.data
@@ -1010,7 +1066,7 @@ class ArmatureExportObject(ExportObject):
             self.Exporter.Log("Done")
 
         self.Exporter.Log("Writing children of {}".format(self))
-        self._WriteChildren(FlattenToMesh, RefMatrix)
+        self._WriteChildren(FlattenType, ChildMatrix)
 
         self._CloseFrame()
         self.Exporter.Log("Closed frame of {}".format(self))
@@ -1391,12 +1447,7 @@ class Util:
         return NewName
 
     @staticmethod
-    def WriteMatrix(File, FlattenToMesh, mtrx):
-        if FlattenToMesh:
-            m = Matrix()
-        else:
-            m = mtrx
-
+    def WriteMatrix(File, m):
         File.Write("{:9f},{:9f},{:9f},{:9f},\n".format(m[0][0],
             m[1][0], m[2][0], m[3][0]))
         File.Write("{:9f},{:9f},{:9f},{:9f},\n".format(m[0][1],

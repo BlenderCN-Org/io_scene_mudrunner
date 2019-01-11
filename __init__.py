@@ -71,10 +71,20 @@ class ExportDirectX(bpy.types.Operator):
         description="Export mesh objects",
         default=True)
 
-    FlattenToMesh = BoolProperty(
-        name="    Flatten Transforms to Meshes",
-        description="Pushes hierarchical transformations into the mesh data (and probably breaks armatures)",
-        default=False)
+    FlattenType = EnumProperty(
+        name="Propagate",
+        description="Propagate selected transformations from the object hierarchy into the mesh data (and probably break armature bones)",
+        items=(('none', "None", "Leave all transforms in object hierarchy"),
+               ('scale', "Scale", "Propagate only scaling to the mesh level"),
+               ('all', "All", "Propagate all transforms to the mesh level"),
+               ),
+        default='scale')
+
+    FlattenRoot = BoolProperty(
+        name="    Flatten Coordinate Root",
+        description="The coordinate matrix is flattened into the top-level "
+            "objects. Do not use with Propagate Scale if top objects are rotated.",
+        default=True)
 
     ExportNormals = BoolProperty(
         name="    Export Normals",
