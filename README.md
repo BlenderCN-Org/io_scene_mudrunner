@@ -38,3 +38,7 @@ Second caveat: if the scale is not the same in all axes, it can result in shear.
 For a static model, set `Propagate: Scale` or `Propagate: All`.  With no constraints to set, either can be used.
 
 The new `FlattenCoordinateRoot` setting should generally remain checked.  This removes the extra layer of hierarchy that the original DirectX exporter used to set the coordinate system.
+
+# Keyboard Shortcut
+
+You can set a keyboard shortcut in Blender for the MudRunner Exporter.  *Right click* `File -> Export -> MudRunner (.x)` in the menu and choose `Add Shortcut`.  I like Ctrl-Shift-E as my shortcut.  Be sure to save your User Preferences for future Blender sessions.
