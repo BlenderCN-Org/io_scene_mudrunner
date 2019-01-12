@@ -21,7 +21,7 @@
 bl_info = {
     "name": "DirectX Exporter for Spintires MudRunner",
     "author": "Chris Nelson from Chris Foster",
-    "version": (0, 0, 11),
+    "version": (0, 0, 12),
     "blender": (2, 69, 0),
     "location": "File > Export > MudRunner (.x)",
     "description": "Export mesh vertices, UV's, materials, textures, "
@@ -35,6 +35,7 @@ import bpy
 from bpy.props import BoolProperty
 from bpy.props import EnumProperty
 from bpy.props import StringProperty
+import os.path
 
 
 class ExportDirectX(bpy.types.Operator):
@@ -182,7 +183,7 @@ class ExportDirectX(bpy.types.Operator):
         default=False)
 
     def execute(self, context):
-        self.filepath = bpy.path.ensure_ext(self.filepath, ".x")
+        self.filepath = self.__EnsureX(self.filepath)
 
         from . import export_x
         Exporter = export_x.DirectXExporter(self, context)
@@ -191,9 +192,16 @@ class ExportDirectX(bpy.types.Operator):
 
     def invoke(self, context, event):
         if not self.filepath:
-            self.filepath = bpy.path.ensure_ext(bpy.data.filepath, ".x")
+            self.filepath = self.__EnsureX(bpy.data.filepath)
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+    # "Private" Methods
+    def __EnsureX(self, filepath):
+        root, ext = os.path.splitext(filepath)
+        if ext.lower() == ".blend":
+            filepath = root
+        return bpy.path.ensure_ext(filepath, ".x")
 
 
 def menu_func(self, context):
