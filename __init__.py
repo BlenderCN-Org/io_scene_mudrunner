@@ -21,7 +21,7 @@
 bl_info = {
     "name": "DirectX Exporter for Spintires MudRunner",
     "author": "Chris Nelson from Chris Foster",
-    "version": (0, 0, 12),
+    "version": (0, 0, 13),
     "blender": (2, 69, 0),
     "location": "File > Export > MudRunner (.x)",
     "description": "Export mesh vertices, UV's, materials, textures, "
@@ -133,7 +133,12 @@ class ExportDirectX(bpy.types.Operator):
     ExportSkinWeights = BoolProperty(
         name="    Export Skin Weights",
         description="Bind mesh vertices to armature bones",
-        default=False)
+        default=True)
+
+    DiscardArmatureName = BoolProperty(
+        name="        Discard Armature Name",
+        description="Use only the bone name without the armature name",
+        default=True)
 
     ApplyModifiers = BoolProperty(
         name="    Apply Modifiers",

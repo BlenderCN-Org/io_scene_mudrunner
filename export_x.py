@@ -919,10 +919,13 @@ class MeshExportObject(ExportObject):
         # This contains vertex indices and weights for the vertices that belong
         # to this bone's group.  Also calculates the bone skin matrix.
         class _BoneVertexGroup:
-                def __init__(self, BlenderObject, ArmatureObject, BoneName):
+                def __init__(self, BlenderObject, ArmatureObject, BoneName, Exporter):
                     self.BoneName = BoneName
-                    self.SafeName = Util.SafeName(ArmatureObject.name) + "_" + \
-                        Util.SafeName(BoneName)
+                    if Exporter.Config.DiscardArmatureName:
+                        self.SafeName = ""
+                    else:
+                        self.SafeName = Util.SafeName(ArmatureObject.name) + "_"
+                    self.SafeName += Util.SafeName(BoneName)
 
                     self.Indices = []
                     self.Weights = []
@@ -971,7 +974,7 @@ class MeshExportObject(ExportObject):
 
             # Create a _BoneVertexGroup for each group name
             BoneVertexGroups = [_BoneVertexGroup(self.BlenderObject,
-                ArmatureObject, BoneName) for BoneName in UsedBoneNames]
+                ArmatureObject, BoneName, self.Exporter) for BoneName in UsedBoneNames]
 
             # Maps Blender's internal group indexing to our _BoneVertexGroups
             GroupIndexToBoneVertexGroups = {Group.index : BoneVertexGroup
