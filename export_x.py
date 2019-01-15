@@ -518,9 +518,8 @@ class MeshExportObject(ExportObject):
 
         # Create the mesh enumerator based on options
         MeshEnumerator = None
-        if (self.Config.ExportUVCoordinates and Mesh.uv_textures) or \
-            (self.Config.ExportVertexColors and Mesh.vertex_colors) or \
-            (self.Config.ExportSkinWeights):
+        if ((self.Config.ExportUVCoordinates and Mesh.uv_textures) or
+            (self.Config.ExportVertexColors and Mesh.vertex_colors)):
             MeshEnumerator = MeshExportObject._UnrolledFacesMeshEnumerator(Mesh)
         else:
             MeshEnumerator = MeshExportObject._OneToOneMeshEnumerator(Mesh)
