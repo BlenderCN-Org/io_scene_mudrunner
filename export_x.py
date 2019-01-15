@@ -940,10 +940,33 @@ class MeshExportObject(ExportObject):
                     # Frame matrix, the vertices will be in their final world
                     # position.
 
-                    self.BoneMatrix = ArmatureObject.data.bones[BoneName] \
+                    BoneMatrix = ArmatureObject.data.bones[BoneName] \
                         .matrix_local.inverted()
-                    self.BoneMatrix *= ArmatureObject.matrix_world.inverted()
-                    self.BoneMatrix *= BlenderObject.matrix_world
+                    BoneMatrix *= ArmatureObject.matrix_world.inverted()
+                    BoneMatrix *= BlenderObject.matrix_world
+
+                    # BoneMatrix calculates the difference in
+                    # transforms between the mesh object (frame) and
+                    # the body frame (attached to the bone).  Each
+                    # could have been modified by flattening, but
+                    # always in a consistent way, so we can simply
+                    # flatten the difference as well.
+                    FlattenType = Exporter.Config.FlattenType
+                    if FlattenType == 'all':
+                        # The bone's frame is emitted with the identity matrix,
+                        # because all transforms are passed to the children.
+                        self.BoneMatrix = Matrix()
+                    elif FlattenType == 'scale':
+                        # The bone's frame is emitted with identity scale,
+                        # because the scale factor is passed to the children.
+
+                        LocationVec, RotationQuat, ScaleVec = BoneMatrix.decompose()
+
+                        LocationMatrix = Matrix.Translation(LocationVec)
+                        RotationMatrix = RotationQuat.to_matrix().to_4x4()
+                        BoneMatrix = LocationMatrix * RotationMatrix
+
+                    self.BoneMatrix = BoneMatrix
 
                 def AddVertex(self, Index, Weight):
                     self.Indices.append(Index)
