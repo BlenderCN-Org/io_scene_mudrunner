@@ -1,6 +1,8 @@
 # io_scene_mudrunner
 This is a DirectX exporter for Blender that creates files compatible with Spintires: MudRunner.
 
+The below documentation provides terse information about the exporter.  More extensive documentation and screenshots can be found in the 'MudRunner Exporter for Blender' section of the [Big Book of MudRunner Map Making](https://steamcommunity.com/sharedfiles/filedetails/?id=1583079240).
+
 MudRunner's limitations on DirectX files are annoying to manually work around in Blender.  To save myself trouble, I modified Blender to export DirectX files compatible with MudRunner with no manual workarounds necessary.
 
 Big caveat: this exporter has only been tested with grasses, static models, and a few dynamic models with simple armatures.  It has not been tested with any models or trucks that require bones to be exported.  It definitely won't work any better, and it may work worse for those models.
@@ -37,7 +39,13 @@ Second caveat: if the scale is not the same in all axes, it can result in shear.
 
 For a static model, set `Propagate: Scale` or `Propagate: All`.  With no constraints to set, either can be used.
 
+Plants have a mix of constraints that are most easily satisfied with `Propagate: All`.  However, if you'd prefer to keep the translations and rotations of your body frames intact, you can choose `Propagate: Scale for body frames, else All`.  This leaves translation and rotation transforms in place for any frame with a child frame whose name starts with 'cdt'.
+
 The new `FlattenCoordinateRoot` setting should generally remain checked.  This removes the extra layer of hierarchy that the original DirectX exporter used to set the coordinate system.
+
+By default, the `Export Materials` box is checked to support a mesh with multiple materials.
+
+By default, the `Export Skin Weights` box is checked to support deformable meshes for dynamic models and especially plants.  The new `Discard Armature Name` box is also checked so that the body frame can be trivially named the same as the bone to sync up their behavior.
 
 # Keyboard Shortcut
 
