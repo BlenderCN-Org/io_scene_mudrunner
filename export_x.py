@@ -322,17 +322,22 @@ class ExportObject: # Base class, do not use
     # "Protected" Interface
 
     def _OpenFrame(self, RefMatrix):
+        body_frame = False
+        for Child in self.Children:
+            if Child.SafeName.lower()[:3] == 'cdt':
+                body_frame = True
+
         OrigMatrix = self.BlenderObject.matrix_local
         self.Exporter.Log("Ref:\n{}".format(RefMatrix))
         self.Exporter.Log("Orig:\n{}".format(OrigMatrix))
 
         FlattenType = self.Config.FlattenType
-        if FlattenType == 'all':
+        if FlattenType == 'all' or (FlattenType == 'plant' and not body_frame):
             # The object's frame is emitted with the identity matrix,
             # and all transforms are passed to the children.
             LocalMatrix = Matrix()
             ChildMatrix = RefMatrix * OrigMatrix
-        elif FlattenType == 'scale':
+        elif FlattenType == 'scale' or FlattenType == 'plant':
             # The object's frame is emitted with identity scale,
             # and the scale factor is passed to the children.
 
@@ -939,31 +944,88 @@ class MeshExportObject(ExportObject):
                     # Frame matrix, the vertices will be in their final world
                     # position.
 
-                    BoneMatrix = ArmatureObject.data.bones[BoneName] \
-                        .matrix_local.inverted()
-                    BoneMatrix *= ArmatureObject.matrix_world.inverted()
-                    BoneMatrix *= BlenderObject.matrix_world
+                    # Put another way, BoneMatrix must transform the body
+                    # frame's rest orientation to the weighted frame's
+                    # (visual's) rest orientation.
 
-                    # BoneMatrix calculates the difference in
-                    # transforms between the mesh object (frame) and
-                    # the body frame (attached to the bone).  Each
-                    # could have been modified by flattening, but
-                    # always in a consistent way, so we can simply
-                    # flatten the difference as well.
+                    # If FlattenType is none, this means convert bone space
+                    # to armature space (reverse armature->bone), then convert
+                    # armature space to world space (reverse world->armature),
+                    # then convert world space to visual's space.  If a
+                    # SystemMatrix was exported for the Root frame, it won't
+                    # show up in the matrix_world transforms, but that's OK.
+                    # Its transform would be reversed for the bone, then
+                    # readded for the visual, so it can simply be ignored.
+
+                    # If FlattenType is anything else, then it's not actually
+                    # the bone space we want to know about, but the associated
+                    # body frame space.  We need to consider the transforms
+                    # that were actually exported for the body frame and the
+                    # visual frame.
+
+                    # If FlattenType is all, then both body and visual are
+                    # exported with no transforms at all in their frames.
+                    # (All transforms are pushed to the mesh level.)  Thus,
+                    # we can ignore the transforms that Blender *thinks*
+                    # apply to the bone and visual and simply set the
+                    # BoneMatrix to the identity matrix.
+
+                    # If FlattenType is scale, then the body and visual are
+                    # exported with most of their Blender transforms (similar
+                    # to FlattenType none), but any scaling should be dropped
+                    # by the BoneMatrix since it was not exported.  (Any
+                    # portion of the hierarchical scaling that effects
+                    # positions was exported, so its effects are included; but
+                    # the final scale factor is not exported, so its effects
+                    # are excluded.)
+
+                    # If FlattenType is plant, then the body is exported with
+                    # most of its Blender transforms intact (except for
+                    # scaling).  However, if the visual frame was correctly
+                    # excluded from the body hierarchy, then it is exported
+                    # with an identity transform since all of its transforms
+                    # are propagated to the mesh level.  Thus, BoneMatrix
+                    # must reverse the bone's orientation (not including
+                    # scaling), but should *not* add the visual's orientation.
+                    # In addition, any rotation of the SystemMatrix was
+                    # exported for the body frame but not for the visual frame.
+                    # This is the one FlattenType where the SystemMatrix
+                    # transforms affects the two sides unequally, so we need
+                    # to include it when we reverse the bone's orientation.
+
                     FlattenType = Exporter.Config.FlattenType
                     if FlattenType == 'all':
                         # The bone's frame is emitted with the identity matrix,
                         # because all transforms are passed to the children.
                         self.BoneMatrix = Matrix()
-                    elif FlattenType == 'scale':
-                        # The bone's frame is emitted with identity scale,
+                        return
+
+                    BoneMatrix = ArmatureObject.data.bones[BoneName] \
+                        .matrix_local.inverted()
+                    BoneMatrix *= ArmatureObject.matrix_world.inverted()
+
+                    # If the visual's transforms are propagated to the
+                    # visual mesh, don't include them in BoneMatrix.
+                    if FlattenType != 'plant':
+                        # We do this for FlattenType 'none' or 'scale'.
+                        BoneMatrix *= BlenderObject.matrix_world
+
+                    if FlattenType == 'scale' or FlattenType == 'plant':
+                        # The BoneMatrix is emitted with identity scale,
                         # because the scale factor is passed to the children.
-
                         LocationVec, RotationQuat, ScaleVec = BoneMatrix.decompose()
-
                         LocationMatrix = Matrix.Translation(LocationVec)
                         RotationMatrix = RotationQuat.to_matrix().to_4x4()
                         BoneMatrix = LocationMatrix * RotationMatrix
+
+                        if (FlattenType == 'plant' and
+                            Exporter.Config.UpAxis == 'Y'):
+                            # With FlattenType 'all' or 'scale', the body frame
+                            # has been rotated by the same amount as the skinned
+                            # mesh.  But that's not true with 'plant'; the
+                            # body frame is rotated and the visual frame is not.
+                            RootRot = Matrix.Rotation(radians(90), 4, 'X')
+                            BoneMatrix = BoneMatrix * RootRot
 
                     self.BoneMatrix = BoneMatrix
 
