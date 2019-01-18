@@ -21,7 +21,7 @@
 bl_info = {
     "name": "DirectX Exporter for Spintires MudRunner",
     "author": "Chris Nelson from Chris Foster",
-    "version": (0, 0, 13),
+    "version": (0, 0, 14),
     "blender": (2, 69, 0),
     "location": "File > Export > MudRunner (.x)",
     "description": "Export mesh vertices, UV's, materials, textures, "
@@ -117,7 +117,7 @@ class ExportDirectX(bpy.types.Operator):
     ExportMaterials = BoolProperty(
         name="    Export Materials",
         description="Export material properties and reference image textures",
-        default=False)
+        default=True)
 
     ExportActiveImageMaterials = BoolProperty(
         name="        Reference Active Images as Textures",
