@@ -981,17 +981,16 @@ class MeshExportObject(ExportObject):
 
                     # If FlattenType is plant, then the body is exported with
                     # most of its Blender transforms intact (except for
-                    # scaling).  However, if the visual frame was correctly
-                    # excluded from the body hierarchy, then it is exported
-                    # with an identity transform since all of its transforms
-                    # are propagated to the mesh level.  Thus, BoneMatrix
-                    # must reverse the bone's orientation (not including
-                    # scaling), but should *not* add the visual's orientation.
-                    # In addition, any rotation of the SystemMatrix was
-                    # exported for the body frame but not for the visual frame.
-                    # This is the one FlattenType where the SystemMatrix
-                    # transforms affects the two sides unequally, so we need
-                    # to include it when we reverse the bone's orientation.
+                    # its final scale).  However, if the visual frame was
+                    # correctly excluded from the body hierarchy, then it is
+                    # exported with an identity transform since all of its
+                    # transforms are propagated to the mesh level.  This means
+                    # that the SystemMatrix was included in the body transform,
+                    # but not the visual transform.  The effects of the
+                    # SystemMatrix don't include the final scale but do include
+                    # any rotations to invert an axis.  These total SystemMatrix
+                    # must be reversed in the BoneMatrix.  The BoneMatrix should
+                    # *not* add the visual's orientation.
 
                     FlattenType = Exporter.Config.FlattenType
                     if FlattenType == 'all':
@@ -1000,32 +999,45 @@ class MeshExportObject(ExportObject):
                         self.BoneMatrix = Matrix()
                         return
 
-                    BoneMatrix = ArmatureObject.data.bones[BoneName] \
-                        .matrix_local.inverted()
-                    BoneMatrix *= ArmatureObject.matrix_world.inverted()
+                    if FlattenType == 'plant':
+                        BoneMatrix = Exporter.SystemMatrix
+                    else:
+                        BoneMatrix = Matrix()
 
-                    # If the visual's transforms are propagated to the
-                    # visual mesh, don't include them in BoneMatrix.
-                    if FlattenType != 'plant':
-                        # We do this for FlattenType 'none' or 'scale'.
-                        BoneMatrix *= BlenderObject.matrix_world
+                    BoneMatrix = BoneMatrix * ArmatureObject.matrix_world
+                    BoneMatrix = BoneMatrix * ArmatureObject.data.bones[BoneName].matrix_local
 
-                    if FlattenType == 'scale' or FlattenType == 'plant':
+                    if FlattenType == 'plant':
+                        # Apply the same rotation that the body frame gets
+                        # in order to invert an axis.
+                        InvertAxis = Exporter.Config.InvertAxis
+                        if BoneMatrix.is_negative and InvertAxis != 'XYZ':
+                            BoneMatrix = (BoneMatrix *
+                                          Matrix.Rotation(radians(180), 4, InvertAxis))
+
+                        # Inverting the negative-scaled matrix before
+                        # decomposing it doesn't work the way I want.
+                        # Therefore, I decompose it first, then invert it.
+                        LocationVec, RotationQuat, ScaleVec = BoneMatrix.decompose()
+                        LocationMatrix = Matrix.Translation(LocationVec)
+                        RotationMatrix = RotationQuat.to_matrix().to_4x4()
+                        BoneMatrix = LocationMatrix * RotationMatrix
+                        self.BoneMatrix = BoneMatrix.inverted()
+                        return
+
+                    # For FlattenType == 'scale' or 'none', we add the
+                    # transforms for the visual frame into BoneMatrix
+                    # to translate from world space to local space for
+                    # the visual mesh.
+                    BoneMatrix *= BlenderObject.matrix_world
+
+                    if FlattenType == 'scale':
                         # The BoneMatrix is emitted with identity scale,
                         # because the scale factor is passed to the children.
                         LocationVec, RotationQuat, ScaleVec = BoneMatrix.decompose()
                         LocationMatrix = Matrix.Translation(LocationVec)
                         RotationMatrix = RotationQuat.to_matrix().to_4x4()
                         BoneMatrix = LocationMatrix * RotationMatrix
-
-                        if (FlattenType == 'plant' and
-                            Exporter.Config.UpAxis == 'Y'):
-                            # With FlattenType 'all' or 'scale', the body frame
-                            # has been rotated by the same amount as the skinned
-                            # mesh.  But that's not true with 'plant'; the
-                            # body frame is rotated and the visual frame is not.
-                            RootRot = Matrix.Rotation(radians(90), 4, 'X')
-                            BoneMatrix = BoneMatrix * RootRot
 
                     self.BoneMatrix = BoneMatrix
 
