@@ -39,9 +39,7 @@ Second caveat: if the scale is not the same in all axes, it can result in shear.
 
 For a static model, set `Propagate: Scale` or `Propagate: All`.  With no constraints to set, either can be used.
 
-Plants have a mix of constraints that are most easily satisfied with `Propagate: All`.  However, if you'd prefer to keep the translations and rotations of your body frames intact, you can choose `Propagate: Scale for body frames, else All`.  This leaves translation and rotation transforms in place for any frame with a child frame whose name starts with 'cdt'.
-
-The new `FlattenCoordinateRoot` setting should generally remain checked.  This removes the extra layer of hierarchy that the original DirectX exporter used to set the coordinate system.
+Plants have a mix of constraints that are most easily satisfied with `Propagate: All`.  However, if you'd prefer to keep the translations and rotations of your body frames intact, you can choose `Propagate: Scale for body frames, else All`.  This leaves translation and rotation transforms in place for any frame that includes a child frame whose name starts with 'cdt'.
 
 By default, the `Export Materials` box is checked to support a mesh with multiple materials.
 
