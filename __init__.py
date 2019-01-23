@@ -21,7 +21,7 @@
 bl_info = {
     "name": "DirectX Exporter for Spintires MudRunner",
     "author": "Chris Nelson from Chris Foster",
-    "version": (0, 1, 0),
+    "version": (0, 1, 1),
     "blender": (2, 69, 0),
     "location": "File > Export > MudRunner (.x)",
     "description": "Export mesh vertices, UV's, materials, textures, "
@@ -67,10 +67,9 @@ class ExportDirectX(bpy.types.Operator):
                ('Z', "Z", "The Z axis points up")),
         default='Y')
 
-    ExportMeshes = BoolProperty(
-        name="Export Meshes",
-        description="Export mesh objects",
-        default=True)
+    # We always want the meshes for MudRunner, so to avoid confusion we
+    # remove the option.
+    ExportMeshes = True
 
     # Blender mysteriously fails if the identifier for 'Scale' uses the same
     # mixed case.  To avoid this, all of these identifiers are lower-case.
@@ -94,93 +93,51 @@ class ExportDirectX(bpy.types.Operator):
                ),
         default='Y')
 
-    FlattenRoot = BoolProperty(
-        name="    Flatten Coordinate Root",
-        description="The coordinate matrix is flattened into the top-level "
-            "objects to avoid adding extra hierarchy.",
-        default=True)
-
     ExportNormals = BoolProperty(
-        name="    Export Normals",
+        name="Export Normals",
         description="Export mesh normals",
         default=True)
 
     FlipNormals = BoolProperty(
-        name="        Flip Normals",
+        name="    Flip Normals",
         description="Flip mesh normals before export",
         default=False)
 
     ExportUVCoordinates = BoolProperty(
-        name="    Export UV Coordinates",
+        name="Export UV Coordinates",
         description="Export mesh UV coordinates, if any",
         default=True)
 
     ExportMaterials = BoolProperty(
-        name="    Export Materials",
+        name="Export Materials",
         description="Export material properties and reference image textures",
         default=True)
 
-    ExportActiveImageMaterials = BoolProperty(
-        name="        Reference Active Images as Textures",
-        description="Reference the active image of each face as a texture, "\
-            "as opposed to the image assigned to the material",
-        default=False)
-
-    ExportVertexColors = BoolProperty(
-        name="    Export Vertex Colors",
-        description="Export mesh vertex colors, if any",
-        default=False)
-
     ExportSkinWeights = BoolProperty(
-        name="    Export Skin Weights",
+        name="Export Skin Weights",
         description="Bind mesh vertices to armature bones",
         default=True)
 
     DiscardArmatureName = BoolProperty(
-        name="        Discard Armature Name",
+        name="    Discard Armature Name",
         description="Use only the bone name without the armature name",
         default=True)
 
     ApplyModifiers = BoolProperty(
-        name="    Apply Modifiers",
+        name="Apply Modifiers",
         description="Apply the effects of object modifiers before export",
         default=False)
 
-    ExportArmatureBones = BoolProperty(
-        name="Export Armature Bones",
-        description="Export armatures bones",
-        default=False)
-
-    ExportRestBone = BoolProperty(
-        name="    Export Rest Position",
-        description="Export bones in their rest position (recommended for "\
-            "animation)",
-        default=False)
-
-    ExportAnimation = BoolProperty(
-        name="Export Animations",
-        description="Export object and bone animations.  Data is exported for "\
-            "every frame",
-        default=False)
-
-    IncludeFrameRate = BoolProperty(
-        name="    Include Frame Rate",
-        description="Include the AnimTicksPerSecond template which is "\
-            "used by some engines to control animation speed",
-        default=False)
-
-    ExportActionsAsSets = BoolProperty(
-        name="    Export Actions as AnimationSets",
-        description="Export each action of each object as a separate "\
-            "AnimationSet. Otherwise all current actions are lumped "\
-            "together into a single set",
-        default=False)
-
-    AttachToFirstArmature = BoolProperty(
-        name="        Attach Unused Actions to First Armature",
-        description="Export each unused action as if used by the first "\
-            "armature object",
-        default=False)
+    # The following features have not been debugged with the changes to
+    # the MudRunner exporter, so they are forced disabled.
+    ExportActiveImageMaterials = False
+    ExportVertexColors = False
+    ExportArmatureBones =  False
+    ExportRestBone =  False
+    ExportAnimation =  False
+    IncludeFrameRate =  False
+    ExportActionsAsSets =  False
+    AttachToFirstArmature = False
 
     Verbose = BoolProperty(
         name="Verbose",

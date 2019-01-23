@@ -39,14 +39,15 @@ class DirectXExporter:
         self.SystemMatrix = Matrix()
         self.SystemMatrix.resize_4x4()
 
-        # If FlattenRoot is true and FlattenType is none,
-        # we just throw away the coordinate system.
-        if not (self.Config.FlattenRoot and self.Config.FlattenType == 'none'):
-            if self.Config.CoordinateSystem == 'LEFT_HANDED':
-                self.SystemMatrix *= Matrix.Scale(-1, 4, Vector((0, 0, 1)))
+        if self.Config.CoordinateSystem == 'LEFT_HANDED':
+            self.SystemMatrix *= Matrix.Scale(-1, 4, Vector((0, 0, 1)))
 
-            if self.Config.UpAxis == 'Y':
-                self.SystemMatrix *= Matrix.Rotation(radians(-90), 4, 'X')
+        if self.Config.UpAxis == 'Y':
+            self.SystemMatrix *= Matrix.Rotation(radians(-90), 4, 'X')
+
+        # The only time we don't flatten the root frame is when no
+        # propagation is performed.
+        self.Config.FlattenRoot = (self.Config.FlattenType != 'none')
 
         self.Log("Done")
 
@@ -550,9 +551,7 @@ class MeshExportObject(ExportObject):
 
             self.Exporter.File.Write("{};".format(len(PolygonVertexIndices)))
 
-            if (not (self.Config.FlattenRoot and
-                     self.Config.FlattenType == 'none') and
-                self.Config.CoordinateSystem == 'LEFT_HANDED'):
+            if self.Config.CoordinateSystem == 'LEFT_HANDED':
                 PolygonVertexIndices = PolygonVertexIndices[::-1]
 
             for VertexCountIndex, VertexIndex in \
