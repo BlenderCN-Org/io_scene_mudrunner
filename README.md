@@ -5,9 +5,7 @@ The below documentation provides terse information about the exporter.  More ext
 
 MudRunner's limitations on DirectX files are annoying to manually work around in Blender.  To save myself trouble, I modified Blender to export DirectX files compatible with MudRunner with no manual workarounds necessary.
 
-Big caveat: this exporter has only been tested with grasses, static models, and a few dynamic models with simple armatures.  It has not been tested with any models or trucks that require bones to be exported.  It definitely won't work any better, and it may work worse for those models.
-
-This Blender addon is known to work with Blender 2.78.  It is based on the DirectX exporter that has been packaged with Blender since at least 2.69, so it should work with those versions as well.  However, there's a good chance that it won't work with Blender 2.80.
+This Blender addon is known to work with Blender 2.78.  It is based on the DirectX exporter that has been packaged with Blender since at least 2.69, so it should work with those versions as well.  However, it does not work with Blender 2.80.
 
 Documentation for the original exporter is [here](https://en.blender.org/index.php/Extensions:2.6/Py/Scripts/Import-Export/DirectX_Exporter).
 
@@ -25,21 +23,19 @@ With the addon, export with `File -> Export -> MudRunner (.x)`.  The export dial
 
 By default, `Export Selected Objects Only` is unchecked because that's always what \*I\* want.  If your scene has extra objects that you don't want to export, you can check this box to only export the selected objects.  Note that virtual things like the camera and lights are never exported regardless of this setting.
 
-If you set `Coordinate System: Left-Handed` and `Up Axis: Y`, then you don't need to rotate or mirror your model.  The exporter will handle that for you.
+If you use the default `Coordinate System: Left-Handed` and `Up Axis: Y`, then you don't need to rotate or mirror your model.  The exporter will handle that for you.
 
-MudRunner can handle different amounts of information in the object hierarchy depending on what kind of thing you're exporting.  Choose the `Propagate` setting accordingly.
+Different types of MudRunner objects have varying support for coordinate space transformations in the object hierarchy.  Choose the `Propagate` setting accordingly, or leave the `Propagate` setting as `auto` for the exporter to choose for you.
 
-For a grass, set `Propagate: All`.  All transformations are pushed into the meshes, leaving the object hierarchy as simple place holders.
+For a static model, overlay model, or grass, set `Propagate: All`.  All transformations are pushed into the meshes, leaving the object hierarchy as simple place holders.
 
-For a dynamic model, set `Propagate: Scale` to keep positions and rotations in the hierarchy, but push scales into the meshes.  This makes constraints easier to set up.
+For a dynamic model or plant, set `Propagate: Scale bodies, else All` to keep locations and rotations for body frames, but push all other transformations into the meshes.  Leaving locations and rotations for body frames makes constraints easier to set up.  Meanwhile, a weighted mesh requires that all transforms are propagated to the mesh level.  Plus, propagating all transforms generally works better in the presense of non-uniform scaling.
 
 Caveat: With the left-handed coordinate system, at least one axis must be inverted from its Blender orientation.  The model displays exactly correctly, but constraints need to be set with respect to the inverted axes.  You can choose which axis is inverted with the `Invert` option.  This option only has an effect with `Propagate: Scale`.
 
-Second caveat: if the scale is not the same in all axes, it can result in shear.  MudRunner can't handle it, and neither can `Propagate: Scale`.
+Second caveat: if the scale is not the same in all axes, it can result in shear.  MudRunner can't handle it, and neither can `Propagate: Scale` or `Scale bodies, else All`.
 
-For a static model, set `Propagate: Scale` or `Propagate: All`.  With no constraints to set, either can be used.
-
-Plants have a mix of constraints that are most easily satisfied with `Propagate: All`.  However, if you'd prefer to keep the translations and rotations of your body frames intact, you can choose `Propagate: Scale for body frames, else All`.  This leaves translation and rotation transforms in place for any frame that includes a child frame whose name starts with 'cdt'.
+The `Propagate: Auto` setting acts as `Propagate: Scale bodies, else All` when exporting a model with more than one body frame (as determined by looking for child frames that start with 'cdt', lower or upper case).  When exporting a model with fewer then two body frames, it acts as `Propagate: All`. If you have a dynamic model or plant with only a single body, and you want that body to keep its location and rotation transforms, you must select your `Propagate` option manually.
 
 By default, the `Export Materials` box is checked to support a mesh with multiple materials.
 

@@ -33,24 +33,6 @@ class DirectXExporter:
 
         self.File = File(self.Config.filepath)
 
-        self.Log("Setting up coordinate system...")
-
-        # SystemMatrix converts from right-handed, z-up to the target coordinate system
-        self.SystemMatrix = Matrix()
-        self.SystemMatrix.resize_4x4()
-
-        if self.Config.CoordinateSystem == 'LEFT_HANDED':
-            self.SystemMatrix *= Matrix.Scale(-1, 4, Vector((0, 0, 1)))
-
-        if self.Config.UpAxis == 'Y':
-            self.SystemMatrix *= Matrix.Rotation(radians(-90), 4, 'X')
-
-        # The only time we don't flatten the root frame is when no
-        # propagation is performed.
-        self.Config.FlattenRoot = (self.Config.FlattenType != 'none')
-
-        self.Log("Done")
-
         self.Log("Generating object lists for export...")
         if self.Config.SelectedOnly:
             ExportList = list(self.context.selected_objects)
@@ -78,12 +60,45 @@ class DirectXExporter:
         self.ExportList = Util.SortByNameField(ExportMap.values())
 
         # Determine each object's children from the pool of ExportObjects
+        bodies = 0
         for Object in ExportMap.values():
             Children = Object.BlenderObject.children
             Object.Children = []
+            is_body = False
             for Child in Children:
                 if Child in ExportMap:
                     Object.Children.append(ExportMap[Child])
+                    if Child.name.lower()[:3] == 'cdt':
+                        is_body = True
+            if is_body:
+                bodies += 1
+        self.Log("Done")
+
+        self.Log("Setting up coordinate system...")
+
+        if self.Config.FlattenType == 'auto':
+            if bodies > 1:
+                self.FlattenType = 'plant'
+            else:
+                self.FlattenType = 'all'
+            self.Log("FlattenType 'auto' converted to '%s'" % self.FlattenType)
+        else:
+            self.FlattenType = self.Config.FlattenType
+
+        # SystemMatrix converts from right-handed, z-up to the target coordinate system
+        self.SystemMatrix = Matrix()
+        self.SystemMatrix.resize_4x4()
+
+        if self.Config.CoordinateSystem == 'LEFT_HANDED':
+            self.SystemMatrix *= Matrix.Scale(-1, 4, Vector((0, 0, 1)))
+
+        if self.Config.UpAxis == 'Y':
+            self.SystemMatrix *= Matrix.Rotation(radians(-90), 4, 'X')
+
+        # The only time we don't flatten the root frame is when no
+        # propagation is performed.
+        self.Config.FlattenRoot = (self.FlattenType != 'none')
+
         self.Log("Done")
 
         self.AnimationWriter = None
@@ -332,7 +347,7 @@ class ExportObject: # Base class, do not use
         self.Exporter.Log("Ref:\n{}".format(RefMatrix))
         self.Exporter.Log("Orig:\n{}".format(OrigMatrix))
 
-        FlattenType = self.Config.FlattenType
+        FlattenType = self.Exporter.FlattenType
         if FlattenType == 'all' or (FlattenType == 'plant' and not body_frame):
             # The object's frame is emitted with the identity matrix,
             # and all transforms are passed to the children.
@@ -991,7 +1006,7 @@ class MeshExportObject(ExportObject):
                     # must be reversed in the BoneMatrix.  The BoneMatrix should
                     # *not* add the visual's orientation.
 
-                    FlattenType = Exporter.Config.FlattenType
+                    FlattenType = Exporter.FlattenType
                     if FlattenType == 'all':
                         # The bone's frame is emitted with the identity matrix,
                         # because all transforms are passed to the children.

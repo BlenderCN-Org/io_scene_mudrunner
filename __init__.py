@@ -77,11 +77,12 @@ class ExportDirectX(bpy.types.Operator):
         name="Propagate",
         description="Propagate selected transformations from the object hierarchy into the mesh data (and probably break armature bones)",
         items=(('none', "None", "Leave all transforms in object hierarchy"),
+               ('auto', "Auto", "Auto-detect model type and propagate accordingly"),
                ('all', "All", "Propagate all transforms to the mesh level"),
                ('scale', "Scale", "Propagate only scaling to the mesh level"),
-               ('plant', "Scale for body frames, else All", "Propagate all transforms to the mesh level, but propagate only scale from frames with a CDT child"),
+               ('plant', "Scale bodies, else All", "Propagate all transforms to the mesh level, but propagate only scale from frames with a CDT child"),
                ),
-        default='scale')
+        default='auto')
 
     InvertAxis = EnumProperty(
         name="Invert",
