@@ -25,7 +25,7 @@ By default, `Export Selected Objects Only` is unchecked because that's always wh
 
 If you use the default `Coordinate System: Left-Handed` and `Up Axis: Y`, then you don't need to rotate or mirror your model.  The exporter will handle that for you.
 
-Different types of MudRunner objects have varying support for coordinate space transformations in the object hierarchy.  Choose the `Propagate` setting accordingly, or leave the `Propagate` setting as `auto` for the exporter to choose for you.
+Different types of MudRunner objects have varying support for coordinate space transformations in the object hierarchy.  Choose the `Propagate` setting accordingly, or leave the `Propagate` setting as `Auto` for the exporter to choose for you.
 
 For a static model, overlay model, or grass, set `Propagate: All`.  All transformations are pushed into the meshes, leaving the object hierarchy as simple place holders.
 
