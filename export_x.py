@@ -377,16 +377,14 @@ class ExportObject: # Base class, do not use
             self.Exporter.Log("Total:\n{}".format(TotalMatrix))
             self.Exporter.Log("Scale:\n{}".format(ScaleVec))
 
-            Scale = TotalMatrix.median_scale
-
             LocationMatrix = Matrix.Translation(LocationVec)
             RotationMatrix = RotationQuat.to_matrix().to_4x4()
             LocalMatrix = LocationMatrix * RotationMatrix
 
-            if TotalMatrix.is_negative:
-                Scale = -Scale
-
-            ChildMatrix = Matrix.Scale(Scale, 4)
+            ChildMatrix = Matrix.Identity(4)
+            ChildMatrix[0][0] = ScaleVec[0]
+            ChildMatrix[1][1] = ScaleVec[1]
+            ChildMatrix[2][2] = ScaleVec[2]
             if RefMatrix.is_negative and InvertAxis != 'XYZ':
                 ChildMatrix = (ChildMatrix *
                                Matrix.Rotation(radians(180), 4, InvertAxis))

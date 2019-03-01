@@ -33,7 +33,7 @@ For a dynamic model or plant, set `Propagate: Scale bodies, else All` to keep lo
 
 Caveat: With the left-handed coordinate system, at least one axis must be inverted from its Blender orientation.  The model displays exactly correctly, but constraints need to be set with respect to the inverted axes.  You can choose which axis is inverted with the `Invert` option.  This option only has an effect with `Propagate: Scale`.
 
-Second caveat: if the scale is not the same in all axes, it can result in shear.  MudRunner can't handle it, and neither can `Propagate: Scale` or `Scale bodies, else All`.
+Second caveat: if the scale is not the same in all axes, it can result in shear.  The scale component cannot be accurately separated out from the transformation of a sheared body, and the model will be distorted as a result.  So don't create a sheared body.
 
 The `Propagate: Auto` setting acts as `Propagate: Scale bodies, else All` when exporting a model with more than one body frame (as determined by looking for child frames that start with 'cdt', lower or upper case).  When exporting a model with fewer then two body frames, it acts as `Propagate: All`. If you have a dynamic model or plant with only a single body, and you want that body to keep its location and rotation transforms, you must select your `Propagate` option manually.
 
